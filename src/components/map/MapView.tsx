@@ -1,9 +1,11 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { createPortal } from 'react-dom'
 import { useGeolocationContext } from '@/components/providers/GeolocationProvider'
+import { NoteMarkerPopup } from '@/components/notes/NoteMarkerPopup'
 import type { Note } from '@/types/notes'
 
 // Fix Leaflet default marker icon issue
@@ -22,14 +24,26 @@ L.Marker.prototype.options.icon = defaultIcon
 interface MapViewProps {
   notes?: Note[]
   onNoteSelect?: (note: Note) => void
+  onNoteEdit?: (note: Note) => void
+  onNoteDelete?: (noteId: string) => void
+  onNoteShare?: (note: Note) => void
   className?: string
 }
 
-export function MapView({ notes = [], onNoteSelect, className = '' }: MapViewProps) {
+export function MapView({
+  notes = [],
+  onNoteSelect,
+  onNoteEdit,
+  onNoteDelete,
+  onNoteShare,
+  className = ''
+}: MapViewProps) {
   const mapRef = useRef<L.Map | null>(null)
   const markersRef = useRef<L.Marker[]>([])
   const userMarkerRef = useRef<L.Marker | null>(null)
+  const popupContentRef = useRef<HTMLDivElement | null>(null)
   const { position } = useGeolocationContext()
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
 
   // Initialize map
   useEffect(() => {
@@ -98,17 +112,50 @@ export function MapView({ notes = [], onNoteSelect, className = '' }: MapViewPro
       const marker = L.marker([note.latitude, note.longitude], { icon: noteIcon })
         .addTo(mapRef.current!)
 
-      if (onNoteSelect) {
-        marker.on('click', () => onNoteSelect(note))
-      }
+      // Create popup with NoteMarkerPopup component
+      const popupContent = document.createElement('div')
+      popupContentRef.current = popupContent
+      
+      const popup = L.popup({
+        closeButton: false,
+        className: 'note-popup'
+      }).setContent(popupContent)
+
+      // Add click handler
+      marker.on('click', () => {
+        setSelectedNote(note)
+        if (onNoteSelect) {
+          onNoteSelect(note)
+        }
+        marker.bindPopup(popup).openPopup()
+      })
 
       markersRef.current.push(marker)
     })
-  }, [notes, onNoteSelect])
+  }, [notes, onNoteSelect, onNoteEdit, onNoteDelete, onNoteShare])
 
   return (
     <div className={`relative min-h-[300px] ${className}`}>
       <div id="map" className="absolute inset-0 rounded-lg z-0" />
+      {selectedNote && popupContentRef.current && createPortal(
+        <NoteMarkerPopup
+          note={selectedNote}
+          onEdit={onNoteEdit}
+          onDelete={onNoteDelete}
+          onShare={onNoteShare}
+          onClose={() => {
+            const marker = markersRef.current.find(
+              m => m.getLatLng().lat === selectedNote.latitude && 
+                   m.getLatLng().lng === selectedNote.longitude
+            )
+            if (marker) {
+              marker.closePopup()
+            }
+            setSelectedNote(null)
+          }}
+        />,
+        popupContentRef.current
+      )}
     </div>
   )
 } 
