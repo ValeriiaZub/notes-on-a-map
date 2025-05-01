@@ -16,12 +16,14 @@
    - [x] Add loading and error states
    - [ ] Support markdown or rich text (optional)
 
-3. Location Display
-   - [x] Show current location coordinates
-   - [x] Display location accuracy
-   - [x] Allow manual location adjustment
-   - [x] Add location preview on map
-   - [ ] Implement reverse geocoding (optional)
+3. Map Integration (Updated)
+   - [x] Integrate Leaflet map component
+   - [x] Show current location with custom marker
+   - [x] Display note markers with custom styling
+   - [x] Add zoom and pan controls
+   - [x] Handle marker click events
+   - [x] Implement responsive map container
+   - [ ] Add clustering for multiple markers (optional)
 
 4. Data Management
    - [ ] Create note creation hook
@@ -66,11 +68,13 @@
    - Integrated with geolocation
 
 4. ✅ Map Integration
-   - Added Mapbox GL JS
+   - Added Leaflet integration
    - Created MapView component
-   - Implemented note markers
+   - Implemented custom markers
    - Added location tracking
    - Created note preview component
+   - Added OpenStreetMap tiles
+   - Implemented marker click handling
 
 ### Next Steps
 1. Create note creation hook with Supabase integration
@@ -94,10 +98,11 @@
    - Loading states
 
 3. `MapView.tsx`
-   - Mapbox GL JS integration
+   - Leaflet map integration
+   - Custom marker components
    - Real-time location tracking
-   - Note markers with click handling
-   - Navigation controls
+   - OpenStreetMap tiles
+   - Zoom/pan controls
 
 4. `NotePreview.tsx`
    - Note content display
@@ -132,6 +137,8 @@
 5. Write tests
 
 ## Notes
+- Using Leaflet with OpenStreetMap for open-source mapping
+- Custom markers for user location and notes
 - Auto-save implemented using localStorage
 - Geolocation updates optimized with watchPosition
 - Mobile-first design with shadcn/ui components

@@ -1,11 +1,21 @@
-import { useRef, useEffect, useState } from 'react'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import { useRef, useEffect } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { useGeolocationContext } from '@/components/providers/GeolocationProvider'
 import type { Note } from '@/types/notes'
 
-// Initialize Mapbox token
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
+// Fix Leaflet default marker icon issue
+const defaultIcon = L.icon({
+  iconUrl: '/marker-icon.png',
+  iconRetinaUrl: '/marker-icon-2x.png',
+  shadowUrl: '/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
+
+L.Marker.prototype.options.icon = defaultIcon
 
 interface MapViewProps {
   notes?: Note[]
@@ -14,90 +24,89 @@ interface MapViewProps {
 }
 
 export function MapView({ notes = [], onNoteSelect, className = '' }: MapViewProps) {
-  const mapContainer = useRef<HTMLDivElement>(null)
-  const map = useRef<mapboxgl.Map | null>(null)
+  const mapRef = useRef<L.Map | null>(null)
+  const markersRef = useRef<L.Marker[]>([])
+  const userMarkerRef = useRef<L.Marker | null>(null)
   const { position } = useGeolocationContext()
-  const [zoom] = useState(14)
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return
+    if (!mapRef.current) {
+      mapRef.current = L.map('map').setView(
+        position ? [position.latitude, position.longitude] : [51.505, -0.09],
+        13
+      )
 
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: position ? [position.longitude, position.latitude] : [-74.5, 40],
-      zoom: zoom,
-    })
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(mapRef.current)
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+      // Add zoom control
+      L.control.zoom({ position: 'topright' }).addTo(mapRef.current)
+    }
 
     return () => {
-      map.current?.remove()
-      map.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
     }
   }, [])
 
-  // Update map center when location changes
+  // Update map center and user marker when location changes
   useEffect(() => {
-    if (!map.current || !position) return
+    if (!mapRef.current || !position) return
 
-    map.current.flyTo({
-      center: [position.longitude, position.latitude],
-      essential: true,
-    })
+    // Update map center
+    mapRef.current.setView([position.latitude, position.longitude], mapRef.current.getZoom())
 
-    // Add or update user location marker
-    const el = document.createElement('div')
-    el.className = 'user-location-marker'
-    el.style.backgroundColor = '#007AFF'
-    el.style.width = '16px'
-    el.style.height = '16px'
-    el.style.borderRadius = '50%'
-    el.style.border = '3px solid white'
-    el.style.boxShadow = '0 0 0 2px rgba(0,122,255,0.3)'
+    // Update or create user marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([position.latitude, position.longitude])
+    } else {
+      const userIcon = L.divIcon({
+        className: 'user-location-marker',
+        html: '<div style="background-color: #007AFF; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 2px rgba(0,122,255,0.3);"></div>',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
+      })
 
-    new mapboxgl.Marker(el)
-      .setLngLat([position.longitude, position.latitude])
-      .addTo(map.current)
+      userMarkerRef.current = L.marker([position.latitude, position.longitude], { icon: userIcon })
+        .addTo(mapRef.current)
+    }
   }, [position])
 
-  // Add note markers to map
+  // Update note markers
   useEffect(() => {
-    if (!map.current) return
+    if (!mapRef.current) return
 
-    // Remove existing markers
-    const markers = document.getElementsByClassName('note-marker')
-    while (markers[0]) {
-      markers[0].remove()
-    }
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove())
+    markersRef.current = []
 
     // Add new markers
-    notes.forEach((note) => {
-      const el = document.createElement('div')
-      el.className = 'note-marker'
-      el.style.backgroundColor = '#FF3B30'
-      el.style.width = '24px'
-      el.style.height = '24px'
-      el.style.borderRadius = '50%'
-      el.style.border = '3px solid white'
-      el.style.boxShadow = '0 0 0 2px rgba(255,59,48,0.3)'
-      el.style.cursor = 'pointer'
+    notes.forEach(note => {
+      const noteIcon = L.divIcon({
+        className: 'note-marker',
+        html: '<div style="background-color: #FF3B30; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 2px rgba(255,59,48,0.3); cursor: pointer;"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      })
 
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([note.longitude, note.latitude])
-        .addTo(map.current)
+      const marker = L.marker([note.latitude, note.longitude], { icon: noteIcon })
+        .addTo(mapRef.current!)
 
       if (onNoteSelect) {
-        el.addEventListener('click', () => onNoteSelect(note))
+        marker.on('click', () => onNoteSelect(note))
       }
+
+      markersRef.current.push(marker)
     })
   }, [notes, onNoteSelect])
 
   return (
     <div className={`relative min-h-[300px] ${className}`}>
-      <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
+      <div id="map" className="absolute inset-0 rounded-lg z-0" />
     </div>
   )
 } 
