@@ -3,8 +3,14 @@ import { useState } from 'react'
 import { GeolocationProvider } from '@/components/providers/GeolocationProvider'
 import { NoteInput } from '@/components/notes/NoteInput'
 import { NotePreview } from '@/components/notes/NotePreview'
-import { MapView } from '@/components/map/MapView'
 import type { Note } from '@/types/notes'
+import dynamic from 'next/dynamic'
+
+const MapView = dynamic(
+  () => import('@/components/map/MapView')
+  .then(module => module.MapView) as any,
+  { ssr: false },
+) as any;
 
 export default function Home() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
