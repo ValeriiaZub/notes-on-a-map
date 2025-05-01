@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Note, NoteChange, SyncStatus } from '@/types/notes'
+import type { Note, SyncStatus } from '@/types/notes'
 import { NoteManager } from '@/lib/services/NoteManager'
 import { OfflineStorage } from '@/lib/services/OfflineStorage'
 import { SyncManager } from '@/lib/services/SyncManager'
@@ -26,9 +26,9 @@ export function useNoteSync() {
         // Store notes locally
         await Promise.all(notes.map(note => offlineStorage.saveNote(note)))
         return notes
-      } catch (error) {
+      } catch (fetchError) {
         // If offline, get notes from local storage
-        console.warn('Failed to fetch from server, using local notes:', error)
+        console.warn('Failed to fetch from server, using local notes:', fetchError)
         return offlineStorage.getLocalNotes()
       }
     },
@@ -43,7 +43,7 @@ export function useNoteSync() {
         // Store note locally
         await offlineStorage.saveNote(newNote)
         return newNote
-      } catch (error) {
+      } catch (createError) {
         // If offline, store locally and queue for sync
         const tempNote = {
           ...note,
@@ -54,7 +54,7 @@ export function useNoteSync() {
         await offlineStorage.saveNote(tempNote)
         await syncManager.queueChange({
           type: 'create',
-          note: tempNote,
+          note: tempNote
         })
         return tempNote
       }

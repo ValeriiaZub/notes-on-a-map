@@ -102,7 +102,6 @@ export function MapView({
             <Popup
               closeButton={false}
               className="note-popup"
-              onClose={() => setSelectedNote(null)}
             >
               <NoteMarkerPopup
                 note={note}

@@ -10,16 +10,21 @@ import { useNoteSync } from '@/hooks/useNoteSync'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 
+// Import type for MapView component
+import type { MapView as MapViewType } from '@/components/map/MapView'
+
 const MapView = dynamic(
-  () => import('@/components/map/MapView')
-  .then(module => module.MapView) as any,
-  { ssr: false },
-) as any;
+  () => import('@/components/map/MapView').then((mod) => {
+    const { MapView } = mod
+    return MapView
+  }),
+  { ssr: false }
+)
 
 export default function Home() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const { notes, createNote, isLoading } = useNoteSync()
+  const { notes, createNote } = useNoteSync()
 
   useEffect(() => {
     // Check authentication status on mount
