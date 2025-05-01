@@ -1,5 +1,7 @@
+'use client'
+
 import { useRef, useEffect } from 'react'
-import L from 'leaflet'
+import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useGeolocationContext } from '@/components/providers/GeolocationProvider'
 import type { Note } from '@/types/notes'

@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext, ReactNode } from 'react'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import type { GeolocationState, GeolocationOptions } from '@/types/notes'

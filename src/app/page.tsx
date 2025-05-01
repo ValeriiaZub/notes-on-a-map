@@ -1,3 +1,4 @@
+'use client'
 import { useState } from 'react'
 import { GeolocationProvider } from '@/components/providers/GeolocationProvider'
 import { NoteInput } from '@/components/notes/NoteInput'
