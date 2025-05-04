@@ -5,15 +5,12 @@ import { createRoot } from 'react-dom/client'
 import { EditableStickyNoteIcon } from '@/components/notes/EditableStickyNoteIcon'
 import 'leaflet/dist/leaflet.css'
 import { useGeolocationContext } from '@/components/providers/GeolocationProvider'
-import { InteractiveStickyMarker } from '@/components/map/InteractiveStickyMarker' // Import the new component
 import type { Note } from '@/types/notes'
 import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup,
   useMap,
-  MapContainerProps // Import MapContainerProps
 } from 'react-leaflet'
 import L, { Map as LeafletMap, DivIcon } from 'leaflet' // Import LeafletMap type and DivIcon
 
@@ -36,7 +33,7 @@ export interface MapViewHandle {
 function UserLocationMarker() {
   const { position } = useGeolocationContext()
   const map = useMap()
-  
+
   console.log('[MapView:UserLocationMarker] Rendering with position:', position);
 
   const userIcon = useMemo(() => {
@@ -80,26 +77,26 @@ function UserLocationMarker() {
 // Component to log map initialization
 function MapInitLogger() {
   const map = useMap();
-  
+
   useEffect(() => {
     console.log('[MapView:MapInitLogger] Map initialized with center:', map.getCenter());
     console.log('[MapView:MapInitLogger] Map zoom level:', map.getZoom());
-    
+
     const logMapEvent = (event: string) => {
       console.log(`[MapView:MapInitLogger] Map event: ${event}`);
     };
-    
+
     map.on('load', () => logMapEvent('load'));
     map.on('zoomend', () => logMapEvent('zoomend'));
     map.on('moveend', () => logMapEvent('moveend'));
-    
+
     return () => {
       map.off('load', () => logMapEvent('load'));
       map.off('zoomend', () => logMapEvent('zoomend'));
       map.off('moveend', () => logMapEvent('moveend'));
     };
   }, [map]);
-  
+
   return null;
 }
 
@@ -115,48 +112,36 @@ function DirectMarkerRenderer({
   onNoteDelete?: (noteId: string) => void,
   onNotePositionChange?: (note: Note, newPosition: L.LatLng) => void
 }) {
+  console.log('aaaaaaa ', notes.map(n => ({ lat: n.latitude, lng: n.longitude })));
   const map = useMap();
   const markersRef = useRef<Record<string, L.Marker>>({});
-  
+
   // Function to create a marker for a note
   const createMarker = useCallback((note: Note) => {
     console.log('[MapView:DirectMarkerRenderer] Creating marker for note:', note.id);
-    
+
     // Create a div element for the marker content
     const markerElement = document.createElement('div');
-    markerElement.style.width = '100px';
-    markerElement.style.height = '100px';
-    markerElement.style.backgroundColor = '#FFFACD';
-    markerElement.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.3)';
-    markerElement.style.padding = '8px';
-    markerElement.style.borderRadius = '3px';
-    markerElement.style.fontFamily = '"Permanent Marker", cursive';
-    markerElement.style.fontSize = '12px';
-    markerElement.style.lineHeight = '1.3';
-    markerElement.style.textAlign = 'center';
-    markerElement.style.cursor = 'pointer';
-    markerElement.style.display = 'flex';
-    markerElement.style.flexDirection = 'column';
-    markerElement.style.justifyContent = 'space-between';
-    markerElement.style.alignItems = 'center';
-    markerElement.style.overflow = 'hidden';
-    markerElement.style.position = 'relative';
-    markerElement.style.wordBreak = 'break-word';
+    markerElement.style.width = '120px';
+    markerElement.style.height = '120px';
 
-    // Create a custom icon using the div element
-    const icon = L.divIcon({
-      html: markerElement,
-      className: 'custom-marker',
-      iconSize: [200, 200],
-      iconAnchor: [100, 100]
-    });
-    
-    // Create a marker with the custom icon
-    const marker = L.marker([note.latitude, note.longitude], {
-      icon,
-      draggable: true
-    }).addTo(map);
-    
+    // markerElement.style.backgroundColor = '#FFFACD';
+    // markerElement.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.3)';
+    // markerElement.style.padding = '8px';
+    // markerElement.style.borderRadius = '3px';
+    // markerElement.style.fontFamily = '"Permanent Marker", cursive';
+    // markerElement.style.fontSize = '12px';
+    // markerElement.style.lineHeight = '1.3';
+    // markerElement.style.textAlign = 'center';
+    // markerElement.style.cursor = 'pointer';
+    // markerElement.style.display = 'flex';
+    // markerElement.style.flexDirection = 'column';
+    // markerElement.style.justifyContent = 'space-between';
+    // markerElement.style.alignItems = 'center';
+    // markerElement.style.overflow = 'hidden';
+    markerElement.style.position = 'relative';
+    // markerElement.style.wordBreak = 'break-word';
+
     // Render the EditableStickyNoteIcon component into the marker element
     const root = createRoot(markerElement);
     root.render(
@@ -166,38 +151,46 @@ function DirectMarkerRenderer({
         onNoteDelete={onNoteDelete}
       />
     );
-    
+
+    const icon = L.divIcon({
+      html: markerElement,
+      className: 'custom-marker',
+      iconSize: [100, 100],
+      iconAnchor: [100, 100],
+    });
+
+    // Create a marker with the custom icon
+    const marker = L.marker([note.latitude, note.longitude], {
+      icon,
+      draggable: true
+    }).addTo(map);
+
     // Add drag end event listener
     marker.on('dragend', () => {
       const newPos = marker.getLatLng();
-      console.log('[MapView:DirectMarkerRenderer] Marker dragged to:', newPos);
-      if (onNotePositionChange) {
-        onNotePositionChange(note, newPos);
-      }
+      onNotePositionChange?.(note, newPos);
     });
-    
+
     return marker;
   }, [map, onNoteDelete, onNotePositionChange, onNoteUpdate]);
-  
+
   // Effect to handle notes changes
   useEffect(() => {
     if (!map) return;
-    
+
     console.log('[MapView:DirectMarkerRenderer] Notes changed, count:', notes.length);
-    
+
     if (notes.length > 0) {
-      console.log('[MapView:DirectMarkerRenderer] Notes data:',
-        notes.map(n => ({ id: n.id, lat: n.latitude, lng: n.longitude })));
-      
+
       // Track which markers need to be removed
       const currentMarkerIds = Object.keys(markersRef.current);
       const newMarkerIds = new Set(notes.map(note => note.id));
-      
+
       // Add or update markers
       notes.forEach(note => {
         // Ensure note.id is a string
         const noteId = String(note.id);
-        
+
         // Check if the marker already exists
         if (markersRef.current && noteId && noteId in markersRef.current) {
           // Update existing marker position
@@ -212,7 +205,7 @@ function DirectMarkerRenderer({
           }
         }
       });
-      
+
       // Remove markers that are no longer in the notes array
       currentMarkerIds.forEach(id => {
         if (!newMarkerIds.has(id) && markersRef.current) {
@@ -224,11 +217,11 @@ function DirectMarkerRenderer({
           }
         }
       });
-      } else {
+    } else {
       // If no notes, clear all markers
       console.log('[MapView:DirectMarkerRenderer] No notes, removing all markers');
     }
-    
+
     // Cleanup function to remove all markers when component unmounts
     return () => {
       if (markersRef.current) {
@@ -241,8 +234,8 @@ function DirectMarkerRenderer({
       }
     };
   }, [map, notes, createMarker]);
-  
-  return;
+
+  return <></>;
 }
 
 // Use forwardRef to allow parent components to get a ref to the MapView
@@ -257,24 +250,15 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({
   className = ''
 }, ref) => {
   console.log('[MapView] Rendering with', notes.length, 'notes');
-  
+
   // Removed selectedNote state
   const { position } = useGeolocationContext()
   const mapRefInternal = useRef<LeafletMap>(null);
-  
-  // Log when component props change
-  useEffect(() => {
-    console.log('[MapView] Notes prop changed, now has', notes.length, 'notes');
-    if (notes.length > 0) {
-      console.log('[MapView] Notes coordinates:',
-        notes.map(n => ({ id: n.id, lat: n.latitude, lng: n.longitude })));
-    }
-  }, [notes]);
 
   // Log when map ref changes
   useEffect(() => {
     console.log('[MapView] Map ref internal state:', !!mapRefInternal.current);
-    
+
     return () => {
       console.log('[MapView] Component unmounting, cleaning up');
     };
@@ -291,9 +275,9 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({
   const center = position
     ? new L.LatLng(position.latitude, position.longitude)
     : new L.LatLng(51.505, -0.09)
-  
+
   console.log('[MapView] Using center:', { lat: center.lat, lng: center.lng });
-    
+
   return (
     <div className={`relative min-h-[300px] ${className}`}>
       <MapContainer
@@ -304,7 +288,7 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({
         className="absolute inset-0 rounded-lg z-0"
       >
         <MapInitLogger />
-        
+
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

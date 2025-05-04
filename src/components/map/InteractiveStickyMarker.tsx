@@ -56,7 +56,7 @@ export function InteractiveStickyMarker({ note, position, onNoteUpdate, onNoteDe
     console.log('[InteractiveStickyMarker] Setting up marker for note:', note.id);
     
     // Define anchor offset here so it's accessible in dragend
-    const anchorOffset = new L.Point(50, 50); // Half width, half height (assuming 100x100px note)
+    const anchorOffset = new L.Point(100,100); // Half width, half height (assuming 100x100px note)
     console.log('[InteractiveStickyMarker] Using anchor offset:', anchorOffset);
 
     // Create the container div using Leaflet's utility

@@ -131,15 +131,6 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                 className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${viewMode === 'map' && !isTransitioning ? 'opacity-100 z-10' : 'opacity-0 z-0'
                                     }`}
                             >
-                                {/* Log before rendering MapView */}
-                                {(() => {
-                                    console.log('[page] Rendering MapView with', notes.length, 'notes');
-                                    if (notes.length > 0) {
-                                        console.log('[page] Notes being passed to MapView:',
-                                            notes.map(n => ({ id: n.id, lat: n.latitude, lng: n.longitude })));
-                                    }
-                                    return null;
-                                })()}
                                 <MapView
                                     ref={mapRef} // Assign ref
                                     notes={notes}

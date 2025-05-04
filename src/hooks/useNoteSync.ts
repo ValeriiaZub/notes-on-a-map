@@ -32,8 +32,6 @@ export function useNoteSync(isAuthenticated: boolean) { // Accept isAuthenticate
         // Get notes from Supabase
         console.log('[useNoteSync] Calling noteManager.getNotes()');
         const notes = await noteManager.getNotes()
-        console.log(`[useNoteSync] Received ${notes.length} notes from server:`,
-          notes.map(n => ({ id: n.id, lat: n.latitude, lng: n.longitude })));
         
         // Store notes locally
         console.log('[useNoteSync] Saving notes to local storage');
@@ -206,30 +204,30 @@ export function useNoteSync(isAuthenticated: boolean) { // Accept isAuthenticate
     },
   })
 
-  // Sync function
-  const sync = useCallback(async () => {
-    try {
-      await syncManager.sync()
-      setSyncStatus(syncManager.getSyncStatus())
-      // Refresh notes after sync
-      queryClient.invalidateQueries({ queryKey: ['notes'] })
-    } catch (error) {
-      console.error('Sync failed:', error)
-      setSyncStatus(syncManager.getSyncStatus())
-    }
-  }, [queryClient])
+  // // Sync function
+  // const sync = useCallback(async () => {
+  //   try {
+  //     await syncManager.sync()
+  //     setSyncStatus(syncManager.getSyncStatus())
+  //     // Refresh notes after sync
+  //     queryClient.invalidateQueries({ queryKey: ['notes'] })
+  //   } catch (error) {
+  //     console.error('Sync failed:', error)
+  //     setSyncStatus(syncManager.getSyncStatus())
+  //   }
+  // }, [queryClient])
 
-  // Auto-sync when online
-  useEffect(() => {
-    const handleOnline = () => {
-      sync()
-    }
+  // // Auto-sync when online
+  // useEffect(() => {
+  //   const handleOnline = () => {
+  //     sync()
+  //   }
 
-    window.addEventListener('online', handleOnline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-    }
-  }, [sync])
+  //   window.addEventListener('online', handleOnline)
+  //   return () => {
+  //     window.removeEventListener('online', handleOnline)
+  //   }
+  // }, [sync])
 
   return {
     notes,
@@ -238,6 +236,6 @@ export function useNoteSync(isAuthenticated: boolean) { // Accept isAuthenticate
     createNote: createNote.mutateAsync,
     updateNote: updateNote.mutateAsync,
     deleteNote: deleteNote.mutateAsync,
-    sync,
+    // sync,
   }
 } 

@@ -125,7 +125,7 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
     backgroundColor: '#FFFACD', // LemonChiffon - adjust later
     boxShadow: '2px 2px 5px rgba(0,0,0,0.3)',
     padding: '8px',
-    borderRadius: '3px',
+    borderRadius: '4px',
     fontFamily: '"Permanent Marker", cursive', // Apply font
     fontSize: '12px', // Adjust font size
     lineHeight: '1.3',
@@ -144,12 +144,15 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
     <div
       ref={containerRef}
       style={noteStyle}
-      onClick={handleEditClick}
+      // onClick={handleEditClick}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        handleEditClick(e)
+      }} // Prevent map zoom on double click
       // Prevent map drag/click when interacting with the note
-      onMouseDown={(e) => { e.stopPropagation(); }}
-      onMouseUp={(e) => { e.stopPropagation(); }}
-      onTouchStart={(e) => { e.stopPropagation(); }}
-      onDoubleClick={(e) => { e.stopPropagation(); }} // Prevent map zoom on double click
+      // onMouseDown={(e) => { e.stopPropagation(); }}
+      // onMouseUp={(e) => { e.stopPropagation(); }}
+      // onTouchStart={(e) => { e.stopPropagation(); }}
     >
       {isEditing ? (
         <>

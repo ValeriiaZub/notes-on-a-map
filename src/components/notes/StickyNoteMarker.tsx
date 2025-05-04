@@ -90,7 +90,6 @@ export function StickyNoteMarker({
           height: '30px',
           backgroundColor: color,
           borderRadius: '2px',
-          boxShadow: '2px 2px 5px rgba(0,0,0,0.2)',
           position: 'relative',
           transformOrigin: 'center center',
           touchAction: 'none',
