@@ -1,8 +1,8 @@
 'use client'
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Note } from '@/types/notes'
 import { z } from 'zod'
+import { createClient } from '../utils/supabase/client'
 
 const noteSchema = z.object({
   content: z.string().min(1).max(1000),
@@ -18,29 +18,24 @@ const noteSchema = z.object({
 })
 
 export class NoteManager {
-  private supabase = createClientComponentClient()
   private realtimeSubscription: (() => void) | null = null
-
-  private async getCurrentUser() {
-    const { data: { session }, error } = await this.supabase.auth.getSession()
-    if (error || !session?.user) {
-      throw new Error('User not authenticated')
-    }
-    return session.user
-  }
 
   async createNote(note: Omit<Note, 'id'>): Promise<Note> {
     // Get current user
-    const user = await this.getCurrentUser()
+    const supabase = createClient()
+    const { data: user } = await supabase.auth.getUser()
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
 
     // Validate note data
     const validatedNote = noteSchema.parse({
       ...note,
-      user_id: user.id // Explicitly set user_id
+      user_id: (user.user as any).id as string,
     })
 
     // Insert note into Supabase
-    const { data, error } = await this.supabase
+    const { data, error } = await supabase
       .from('notes')
       .insert([validatedNote])
       .select()
@@ -55,10 +50,11 @@ export class NoteManager {
 
   async updateNote(note: Note): Promise<Note> {
     // Validate note data
+    const supabase = createClient()
     const validatedNote = noteSchema.parse(note)
 
     // Update note in Supabase
-    const { data, error } = await this.supabase
+    const { data, error } = await supabase
       .from('notes')
       .update({
         ...validatedNote,
@@ -77,7 +73,9 @@ export class NoteManager {
   }
 
   async deleteNote(noteId: string): Promise<void> {
-    const { error } = await this.supabase
+    const supabase = createClient()
+
+    const { error } = await supabase
       .from('notes')
       .delete()
       .eq('id', noteId)
@@ -89,13 +87,17 @@ export class NoteManager {
 
   async getNotes(): Promise<Note[]> {
     // Get current user
-    const user = await this.getCurrentUser()
+    const supabase = createClient()
+    const { data: user } = await supabase.auth.getUser()
+    if (!user) {
+      throw new Error('User not authenticated')
+    }
 
-    const { data, error } = await this.supabase
+    const { data, error } = await supabase
       .from('notes')
       .select('*')
-      .eq('user_id', user.id) // Explicitly filter by user_id
-      .order('created_at', { ascending: false })
+      .eq('user_id', (user.user as any).id) // Explicitly filter by user_id
+      .order('created_at', { ascending: true })
 
     if (error) {
       throw new Error(`Failed to fetch notes: ${error.message}`)
@@ -106,12 +108,14 @@ export class NoteManager {
 
   subscribeToNotes(callback: (notes: Note[]) => void): () => void {
     // Clean up any existing subscription
+    const supabase = createClient()
+
     if (this.realtimeSubscription) {
       this.realtimeSubscription()
     }
 
     // Subscribe to note changes
-    const subscription = this.supabase
+    const subscription = supabase
       .channel('notes_channel')
       .on(
         'postgres_changes',

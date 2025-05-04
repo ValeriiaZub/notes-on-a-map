@@ -67,13 +67,18 @@ A mobile-first web application that allows users to create location-based notes 
 - [ ] Ensure new note creation is available in both views
 
 
-### 8. Search and Filter Notes
-- [ ] Create a list view that would toggle 
-- [ ] Add a search input field to the notes interface ove the map
-- [ ] Implement text-based filtering by note content or tags
-- [ ] Display filtered notes on the map and in list view (if any)
- Debounce input for performance and UX
- Sync filtered state with map markers visibility
+### 8. Editable Sticky Notes on Map [x]
+- [x] Replace Leaflet Marker popups with custom DOM elements (e.g., using Leaflet’s DivIcon or L.Layer with custom HTML/CSS to appear as sticky note UI). *(Implemented using custom layer component `InteractiveStickyMarker` with `createPortal`)*
+- [x] Implement sticky note visual styles using CSS transforms, fonts, colors, and box shadows (like post-its). Support different colors for notes (e.g., pink, blue, yellow) *(Basic styling implemented in `EditableStickyNoteIcon`, including font)*
+- [x] Use Permanent marker google font for the notes, center align text, always fit the context into the avaliable area *(Font loaded and applied)*
+- [ ] Apply mav view sticky styling to list view notes
+- [x] Add onClick interaction to enter “edit mode” directly on the sticky note (contenteditable div or modal). *(Implemented via click handler and state in `EditableStickyNoteIcon`)*
+- [x] Update backend or local state when the sticky note is edited inline. *(Implemented via Supabase update in `EditableStickyNoteIcon`)*
+- [ ] Animate sticky note "pop" or “bounce” on drop using CSS animation or Framer Motion (or a similar animation library compatible with codebase). *(Animation not implemented)*
+- [x]  Ensure notes move or reposition smoothly as the user pans/zooms the map — sticky notes should feel "pinned" to locations. Use useRef + useEffect to control DOM animations when a note is rendered on map. *(Implemented via map event listeners in `InteractiveStickyMarker`)*
+- [ ]  Use a shared layout transition for sticky notes moving from the map to list view and vice versa (can use Framer Motion or CSS transitions). *(Transition not implemented)*
+
+**Summary:** Notes are now displayed as interactive sticky notes directly on the map. Clicking a note allows for in-place editing, with changes saved back to the database. Basic styling and the "Permanent Marker" font are applied.
 
 ## Database Schema
 

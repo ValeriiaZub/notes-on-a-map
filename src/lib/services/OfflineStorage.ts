@@ -90,6 +90,13 @@ export class OfflineStorage {
     await db.clear('changes')
   }
 
+  async deleteNote(noteId: string): Promise<void> {
+    console.log('[OfflineStorage] Deleting note with ID:', noteId);
+    const db = await this.getDB();
+    await db.delete('notes', noteId);
+    console.log('[OfflineStorage] Note deleted from IndexedDB');
+  }
+
   async updateSyncStatus(noteId: string, status: Note['sync_status']): Promise<void> {
     const db = await this.getDB()
     const note = await db.get('notes', noteId)
