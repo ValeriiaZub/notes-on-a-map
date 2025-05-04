@@ -6,7 +6,7 @@ A mobile-first web application that allows users to create location-based notes 
 
 - **Frontend Framework**: Next.js 14 (React)
 - **Styling**: Tailwind CSS
-- **Maps**: Mapbox GL JS
+- **Maps**: Leaflet
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth
 - **Hosting**: Vercel
@@ -31,7 +31,7 @@ A mobile-first web application that allows users to create location-based notes 
 - [ ] Implement note saving to Supabase
 
 ### 3. Map Integration (Visualization)
-- [ ] Set up Mapbox GL JS integration
+- [ ] Set up leaflet integration
 - [ ] Create responsive map component
 - [ ] Implement current location centering
 - [ ] Add map markers for saved notes
@@ -41,22 +41,39 @@ A mobile-first web application that allows users to create location-based notes 
 - [ ] Create note marker popup component
 - [ ] Implement note viewing functionality
 - [ ] Add note editing and deletion features
-- [ ] Add animations for marker interactions
-- [ ] Implement note filtering and search
+- [ ] Enable drag-and-drop marker repositioning
+- [ ]  Update markers style with sticky note-style
+- [ ] Implement smooth transitions for marker-to-popup
+- [ ] Add real-time position updates during drag
+- [ ] Save new marker positions to database
 
 ### 5. Data Management (Backend)
 - [ ] Set up Supabase real-time subscriptions for live updates
-- [ ] Implement offline support with local storage
 - [ ] Add data synchronization
 - [ ] Implement data validation and sanitization
 - [ ] Add error boundaries and loading states
 
 ### 6. Polish and Optimization
-- [ ] Add loading states and animations
 - [ ] Implement error handling and user feedback
 - [ ] Add progressive web app (PWA) support
 - [ ] Optimize performance and lazy loading
-- [ ] Add share functionality for notes
+
+### 7. Toggle Between Map and List View
+- [x] Add a toggle button labeled “Map / List” at the bottom center
+- [ ] Animate transition between views (fade)
+- [ ] Match sticky note style in list view
+- [ ] Group list notes by time note was created, this informaiton is in database (e.g., “Just now”, “Yesterday”)
+- [ ] Allow notes to be tapped from list to open in full/map view
+- [ ] Ensure new note creation is available in both views
+
+
+### 8. Search and Filter Notes
+- [ ] Create a list view that would toggle 
+- [ ] Add a search input field to the notes interface ove the map
+- [ ] Implement text-based filtering by note content or tags
+- [ ] Display filtered notes on the map and in list view (if any)
+ Debounce input for performance and UX
+ Sync filtered state with map markers visibility
 
 ## Database Schema
 
@@ -114,9 +131,11 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your-mapbox-token
 - 🔒 Secure user authentication
 - 💾 Real-time data synchronization
 - 📱 Mobile-first responsive design
-- 🌐 Offline support
 - 🔍 Search and filter notes
 - 📤 Share notes with others
+- 🎯 Drag-and-drop marker positioning
+- 🎨 Animated sticky note markers
+- ✨ Smooth marker-to-popup transitions
 
 ## Contributing
 

@@ -1,0 +1,198 @@
+# Task 1.6 - Enhanced Marker Interactions and Styling
+
+## Success Criteria
+
+1. Draggable Markers
+   - [ ] Enable marker dragging on the map
+   - [ ] Show visual feedback during drag
+   - [ ] Update marker position in real-time
+   - [ ] Save new position to database
+   - [ ] Handle offline position updates
+   - [ ] Add undo/redo for position changes
+
+2. Sticky Note Styling
+   - [ ] Create sticky note SVG design
+   - [ ] Add paper texture and shadow effects
+   - [ ] Implement tilt animation on hover
+   - [ ] Add color variations for notes
+   - [ ] Support custom note colors
+   - [ ] Add folded corner effect
+
+3. Marker-to-Popup Transitions
+   - [ ] Design expanded sticky note view
+   - [ ] Add smooth scale animation
+   - [ ] Implement content fade-in
+   - [ ] Handle transition cancellation
+   - [ ] Add gesture support for mobile
+   - [ ] Ensure accessibility
+
+4. Position Updates
+   - [ ] Implement optimistic UI updates
+   - [ ] Add loading state during save
+   - [ ] Handle save failures gracefully
+   - [ ] Update all connected clients
+   - [ ] Maintain consistency with offline data
+   - [ ] Add position history
+
+## Implementation Plan
+
+1. Marker Component Updates
+```typescript
+interface DraggableNoteMarker {
+  // Marker props
+  position: LatLng
+  note: Note
+  isDragging: boolean
+  
+  // Event handlers
+  onDragStart: () => void
+  onDrag: (newPos: LatLng) => void
+  onDragEnd: (finalPos: LatLng) => void
+  
+  // Style props
+  color?: string
+  tilt?: number
+  scale?: number
+}
+
+interface NotePopup {
+  note: Note
+  isExpanded: boolean
+  onEdit: (note: Note) => void
+  onPositionChange: (newPos: LatLng) => void
+  onClose: () => void
+}
+```
+
+2. Sticky Note Styling
+```css
+.sticky-note {
+  /* Base styles */
+  --note-color: #ffd700;
+  --note-shadow: rgba(0, 0, 0, 0.2);
+  
+  /* Transforms */
+  transform-origin: center center;
+  transition: all 0.3s ease;
+  
+  /* Hover effects */
+  &:hover {
+    transform: scale(1.05) rotate(var(--tilt-angle));
+    z-index: 1000;
+  }
+  
+  /* Dragging state */
+  &.dragging {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+```
+
+3. Database Updates
+```sql
+-- Add position history
+create table note_position_history (
+  id uuid default uuid_generate_v4() primary key,
+  note_id uuid references notes(id) on delete cascade,
+  previous_lat double precision not null,
+  previous_lng double precision not null,
+  new_lat double precision not null,
+  new_lng double precision not null,
+  changed_at timestamp with time zone default now() not null
+);
+
+-- Add position update trigger
+create function log_position_change() returns trigger as $$
+begin
+  if (OLD.latitude != NEW.latitude or OLD.longitude != NEW.longitude) then
+    insert into note_position_history (
+      note_id, previous_lat, previous_lng, new_lat, new_lng
+    ) values (
+      NEW.id, OLD.latitude, OLD.longitude, NEW.latitude, NEW.longitude
+    );
+  end if;
+  return NEW;
+end;
+$$ language plpgsql;
+
+create trigger note_position_change
+  before update on notes
+  for each row
+  execute function log_position_change();
+```
+
+4. Animation States
+```typescript
+type NoteState = 'idle' | 'hover' | 'dragging' | 'expanding' | 'expanded' | 'collapsing'
+
+interface AnimationConfig {
+  duration: number
+  easing: string
+  scale: number
+  rotation: number
+  opacity: number
+}
+
+const animationStates: Record<NoteState, AnimationConfig> = {
+  idle: {
+    duration: 0,
+    easing: 'ease',
+    scale: 1,
+    rotation: 0,
+    opacity: 1
+  },
+  hover: {
+    duration: 200,
+    easing: 'ease-out',
+    scale: 1.1,
+    rotation: 5,
+    opacity: 1
+  },
+  // ... other states
+}
+```
+
+## Testing Strategy
+
+1. Unit Tests
+   - Test marker drag events
+   - Validate position updates
+   - Check animation states
+   - Test offline behavior
+
+2. Integration Tests
+   - Test real-time updates
+   - Verify position history
+   - Test state transitions
+   - Validate database triggers
+
+3. E2E Tests
+   - Test complete drag workflow
+   - Verify animations
+   - Test mobile interactions
+   - Check offline sync
+
+## Success Metrics
+
+1. Performance
+   - Animation frame rate > 30fps
+   - Position update < 100ms
+   - Transition duration < 300ms
+
+2. User Experience
+   - Smooth drag experience
+   - Responsive animations
+   - Clear visual feedback
+   - Intuitive interactions
+
+3. Reliability
+   - 100% position save rate
+   - No animation glitches
+   - Consistent state management
+
+## Dependencies
+- Framer Motion (for animations)
+- React Use Gesture (for drag interactions)
+- React Spring (for physics-based animations)
+- Leaflet.Marker.Drag (for marker dragging) 
