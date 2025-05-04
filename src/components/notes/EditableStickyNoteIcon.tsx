@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import type { Note } from '@/types/notes'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Loader2, Check, X } from 'lucide-react' // Icons for loading/save/cancel
+import { Loader2, Check, X, Trash2 } from 'lucide-react' // Icons for loading/save/cancel/delete
 import L from 'leaflet' // Import Leaflet for DomEvent
 import { createClient } from '@/lib/utils/supabase/client'
 
@@ -18,7 +18,8 @@ interface EditableStickyNoteIconProps {
 export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: EditableStickyNoteIconProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedContent, setEditedContent] = useState(note.content)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false) // For save/update
+  const [isDeleting, setIsDeleting] = useState(false) // For delete
   const [error, setError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -31,6 +32,17 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
       setEditedContent(note.content);
     }
   }, [note.content, note.updated_at, isEditing]); // Depend on updated_at to catch external updates
+
+  // Start in edit mode if the flag is set (runs only once on mount)
+  useEffect(() => {
+    if (note.startInEditMode) {
+      console.log(`[EditableStickyNoteIcon ${note.id}] Starting in edit mode.`);
+      setIsEditing(true);
+      // Optionally, reset the flag in the parent state via a callback if needed,
+      // but handleSave should correctly identify it as new based on ID format.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once
 
   // Focus textarea when editing starts
   useEffect(() => {
@@ -53,38 +65,86 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
     setIsLoading(true)
     setError(null)
 
-    // Check session validity before attempting the update
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Determine if it's a new note (using temporary ID format)
+    const isNewNote = note.id?.startsWith('temp-');
+    console.log(`[EditableStickyNoteIcon ${note.id}] handleSave called. Is new note?`, isNewNote);
 
-    if (sessionError || !session) {
-      // Session is invalid or error occurred fetching it
-      console.error('Session error or no session before update:', sessionError);
-      setError('Your session has expired. Please log in again to save changes.');
+    try {
+      let savedNote: Note | null = null;
+
+      // Fetch user ID first, as it might be needed for both insert and update (RLS)
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error('Error fetching user or no user logged in:', userError);
+        throw new Error('User not authenticated.'); // This will be caught below
+      }
+
+      if (isNewNote) {
+        // --- INSERT Logic for New Note ---
+        console.log(`[EditableStickyNoteIcon ${note.id}] Performing INSERT with content: "${editedContent}" for user ${user.id}`);
+
+        const { data: insertedData, error: insertError } = await supabase
+          .from('notes')
+          .insert({
+            content: editedContent,
+            latitude: note.latitude, // Use coordinates from the temporary note
+            longitude: note.longitude,
+            user_id: user.id // Include user_id for RLS on insert
+          })
+          .select() // Select the newly inserted row
+          .single(); // Expect a single row back
+
+        if (insertError) {
+          console.error(`[EditableStickyNoteIcon ${note.id}] Insert Error:`, insertError);
+          throw insertError; // Throw error to be caught below
+        }
+        console.log(`[EditableStickyNoteIcon ${note.id}] Insert successful. New ID:`, insertedData.id);
+        savedNote = insertedData as Note;
+
+      } else {
+        // --- UPDATE Logic for Existing Note ---
+        console.log(`[EditableStickyNoteIcon ${note.id}] Performing UPDATE with content: "${editedContent}" for user ${user.id}`);
+        const { data: updatedData, error: updateError } = await supabase
+          .from('notes')
+          .update({ content: editedContent, updated_at: new Date().toISOString() })
+          .eq('id', note.id) // Match the note ID
+          .eq('user_id', user.id) // *** ADDED: Ensure user owns the note (RLS) ***
+          .select()
+          .single();
+
+        if (updateError) {
+          // Log the specific update error
+          console.error(`[EditableStickyNoteIcon ${note.id}] Update Error:`, updateError);
+          // Check if it was a RLS violation (PostgREST returns 404 if filter removes all rows)
+          if (updateError.code === 'PGRST116' && updateError.details?.includes('Results contain 0 rows')) {
+             console.warn(`[EditableStickyNoteIcon ${note.id}] Update failed, likely RLS violation or note deleted.`);
+             throw new Error('Note not found or permission denied.');
+          }
+          throw updateError; // Throw other errors to be caught below
+        }
+        console.log(`[EditableStickyNoteIcon ${note.id}] Update successful.`);
+        savedNote = updatedData as Note;
+      }
+
+      // --- Success Handling (Common for Insert/Update) ---
       setIsLoading(false);
-      // Do not proceed with the update if session is invalid
-      return;
+      setIsEditing(false); // Exit edit mode on successful save
+      if (savedNote) {
+        // IMPORTANT: Call onNoteUpdate with the full note data from Supabase
+        // This allows the parent hook to replace the temporary note with the permanent one
+        onNoteUpdate?.(savedNote);
+      }
+
+    } catch (error: any) {
+      // --- Error Handling (Common for Insert/Update) ---
+      console.error(`Error ${isNewNote ? 'inserting' : 'updating'} note:`, error);
+      setError(`Failed to ${isNewNote ? 'create' : 'save'} note. ${error.message || ''}`);
+      setIsLoading(false);
+      // Keep editing mode active on error
     }
 
-    // Session is valid, proceed with the update
-    const { data, error: updateError } = await supabase
-      .from('notes')
-      .update({ content: editedContent, updated_at: new Date().toISOString() })
-      .eq('id', note.id)
-      .select()
-      .single()
-
-    setIsLoading(false)
-
-    if (updateError) {
-      console.error('Error updating note:', updateError)
-      setError('Failed to save note.')
-      // Keep editing mode active on error to allow retry/correction
-    } else if (data) {
-      setIsEditing(false)
-      onNoteUpdate?.(data as Note)
-      // Parent should update the note prop, which useEffect will catch
-    }
-  }, [isEditing, isLoading, editedContent, note.content, note.id, onNoteUpdate]); // Added dependencies
+  }, [isEditing, isLoading, editedContent, note, onNoteUpdate, supabase]); // Updated dependencies
 
   // Handle clicks outside the component to save
   useEffect(() => {
@@ -118,6 +178,65 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
     setError(null)
   }
 
+  // Handle Delete Action
+  const handleDelete = useCallback(async () => {
+    // Prevent deleting unsaved new notes
+    if (note.id?.startsWith('temp-')) {
+      console.log(`[EditableStickyNoteIcon ${note.id}] Attempted to delete temporary note. Cancelling edit instead.`);
+      handleCancel(); // Just cancel the edit for temp notes
+      return;
+    }
+
+    if (isDeleting || isLoading) return; // Prevent double clicks
+
+    console.log(`[EditableStickyNoteIcon ${note.id}] handleDelete called.`);
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      // Fetch user ID to ensure RLS is respected
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error('Error fetching user or no user logged in:', userError);
+        throw new Error('User not authenticated.');
+      }
+
+      console.log(`[EditableStickyNoteIcon ${note.id}] Performing DELETE for user ${user.id}`);
+      const { error: deleteError } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', note.id) // Match the note ID
+        .eq('user_id', user.id); // Match the user ID for RLS
+
+      if (deleteError) {
+        console.error(`[EditableStickyNoteIcon ${note.id}] Delete Error:`, deleteError);
+        // Check for RLS violation (PostgREST returns 404 if filter removes all rows)
+        if (deleteError.code === 'PGRST116' && deleteError.details?.includes('Results contain 0 rows')) {
+           console.warn(`[EditableStickyNoteIcon ${note.id}] Delete failed, likely RLS violation or note already deleted.`);
+           throw new Error('Note not found or permission denied.');
+        }
+        throw deleteError; // Throw other errors
+      }
+
+      // --- Success Handling ---
+      console.log(`[EditableStickyNoteIcon ${note.id}] Delete successful.`);
+      setIsDeleting(false);
+      if (note.id) { // Explicit check for note.id before calling callback
+        onNoteDelete?.(note.id); // Notify parent component
+      }
+      // No need to reset state here, as the component will likely unmount
+
+    } catch (error: any) {
+      // --- Error Handling ---
+      console.error(`Error deleting note:`, error);
+      setError(`Failed to delete note. ${error.message || ''}`);
+      setIsDeleting(false); // Reset loading state on error
+      // Keep editing mode active on error
+    }
+  }, [note.id, isDeleting, isLoading, supabase, onNoteDelete, handleCancel]); // Added handleCancel dependency
+
+
   // Basic styling - refine later with Tailwind and font
   const noteStyle: React.CSSProperties = {
     width: '100px', // Adjust size
@@ -144,11 +263,10 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
     <div
       ref={containerRef}
       style={noteStyle}
-      // onClick={handleEditClick}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        handleEditClick(e)
-      }} // Prevent map zoom on double click
+      onClick={handleEditClick}
+      // onDoubleClick={(e) => {
+      // e.stopPropagation();
+      // }} // Prevent map zoom on double click
       // Prevent map drag/click when interacting with the note
       // onMouseDown={(e) => { e.stopPropagation(); }}
       // onMouseUp={(e) => { e.stopPropagation(); }}
@@ -170,16 +288,45 @@ export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: Edi
           />
           {/* Buttons container */}
           <div className="flex justify-center items-center gap-1 mt-1 h-6"> {/* Fixed height for buttons */}
-            {isLoading ? (
+            {isLoading || isDeleting ? ( // Show loader if saving OR deleting
               <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
             ) : (
               <>
-                <Button variant="ghost" size="icon" className="h-5 w-5 text-green-600 hover:bg-green-100" title="Save" onClick={(e) => { e.stopPropagation(); handleSave(); }}>
+                {/* Save Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-green-600 hover:bg-green-100 disabled:opacity-50"
+                  title="Save"
+                  onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                  disabled={isLoading || isDeleting} // Disable if saving or deleting
+                >
                   <Check className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-5 w-5 text-red-600 hover:bg-red-100" title="Cancel" onClick={(e) => { e.stopPropagation(); handleCancel(); }}>
+                {/* Cancel Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 text-orange-600 hover:bg-orange-100 disabled:opacity-50" // Changed color for distinction
+                  title="Cancel"
+                  onClick={(e) => { e.stopPropagation(); handleCancel(); }}
+                  disabled={isLoading || isDeleting} // Disable if saving or deleting
+                >
                   <X className="h-4 w-4" />
                 </Button>
+                {/* Delete Button - Don't show for new temp notes */}
+                {!note.id?.startsWith('temp-') && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-red-600 hover:bg-red-100 disabled:opacity-50"
+                    title="Delete"
+                    onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+                    disabled={isLoading || isDeleting} // Disable if saving or deleting
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </>
             )}
           </div>

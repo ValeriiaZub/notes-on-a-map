@@ -9,6 +9,7 @@ export interface Note {
   updated_at?: string
   sync_status?: 'synced' | 'pending' | 'conflict'
   version?: number
+  startInEditMode?: boolean; // Flag to indicate if the note should start in edit mode
 }
 
 export interface GeolocationState {

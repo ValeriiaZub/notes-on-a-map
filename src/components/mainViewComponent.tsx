@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from "react";
+import { Plus } from 'lucide-react'; // Import Plus icon
 import { GeolocationProvider } from "./providers/GeolocationProvider";
 import { Button } from "./ui/button";
 import { Note } from "@/types/notes";
@@ -34,7 +35,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const [isTransitioning, setIsTransitioning] = useState(false); // State for animation
     const mapRef = useRef<MapViewHandle | null>(null); // Use the imported MapViewHandle type for the ref
     const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for timeout
-    const { notes, createNote, updateNote, isLoading } = useNoteSync(isAuthenticated) // Pass isAuthenticated and get isLoading
+    const { notes, createNote, updateNote, isLoading, addTemporaryNote } = useNoteSync(isAuthenticated) // Get addTemporaryNote
     const supabase = createClient()
 
     const handleSaveNote = async (note: Note) => {
@@ -93,11 +94,29 @@ const MainMapView = ({ isAuthenticated }: Props) => {
         }
     }
 
+    const handleAddNoteClick = () => {
+        console.log('[page] Add Note button clicked');
+        const center = mapRef.current?.getCenter();
+        if (center) {
+            console.log('[page] Map center:', center);
+            // Call the function from useNoteSync
+            addTemporaryNote(center.lat, center.lng);
+            // Optionally switch back to map view if in list view
+            if (viewMode === 'list') {
+                setViewMode('map');
+                // Potentially add transition logic if desired
+            }
+        } else {
+            console.warn('[page] Could not get map center');
+            // TODO: Add user feedback (e.g., toast notification) if center cannot be obtained
+        }
+    };
+
     return (
         <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 relative"> {/* Added relative positioning for button */}
             <div className="w-full max-w-6xl flex flex-col flex-grow"> {/* Added flex-grow */}
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-4xl font-bold">Notes on a Map 📍</h1>
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-bold">Notes on a map 📍</h3>
                     {isAuthenticated && (
                         <Button variant="ghost" onClick={handleSignOut}>
                             Sign Out
@@ -136,7 +155,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                     notes={notes}
                                     // onNoteSelect={setSelectedNote} // Removed - MapView no longer handles direct selection this way
                                     onNotePositionChange={handleNotePositionChange}
-                                    className="h-[500px] md:h-[600px] lg:h-full w-full" // Adjusted height and width
+                                    className="h-full md:h-[600px] lg:h-full w-full" // Adjusted height and width
                                 />
                             </div>
 
@@ -145,7 +164,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                 className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${viewMode === 'list' && !isTransitioning ? 'opacity-100 z-10' : 'opacity-0 z-0'
                                     }`}
                             >
-                                <ListView
+                                <ListView 
                                     notes={notes}
                                     onNoteSelect={(note: Note) => { // Add Note type to parameter
                                         console.log('[page] Note selected in list view:', note.id);
@@ -158,13 +177,24 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                             mapRef.current?.flyTo(note.latitude, note.longitude, 15); // Fly to note location
                                         }, 50); // Small delay (adjust if needed)
                                     }}
-                                    className="h-[500px] md:h-[600px] lg:h-full w-full overflow-y-auto" // Added overflow
+                                    className="h-full md:h-[600px] lg:h-full w-full overflow-y-auto"// Added overflow
                                 />
                             </div>
                         </div>
 
                         {/* Toggle Button - Positioned at bottom center */}
-                        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20"> {/* Increased z-index */}
+                        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2"> {/* Added flex and gap */}
+                            {/* Add Note Button */}
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={handleAddNoteClick}
+                                disabled={isLoading || !isAuthenticated} // Disable if loading or not authenticated
+                                title="Add new note at map center"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                            {/* View Toggle Button */}
                             <Button
                                 onClick={() => {
                                     const nextView = viewMode === 'map' ? 'list' : 'map';

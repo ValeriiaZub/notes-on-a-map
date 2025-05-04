@@ -28,6 +28,7 @@ interface MapViewProps {
 // Define the type for the imperative handle
 export interface MapViewHandle {
   flyTo: (lat: number, lng: number, zoom?: number) => void;
+  getCenter: () => L.LatLng | undefined; // Add getCenter method signature
 }
 
 function UserLocationMarker() {
@@ -112,7 +113,7 @@ function DirectMarkerRenderer({
   onNoteDelete?: (noteId: string) => void,
   onNotePositionChange?: (note: Note, newPosition: L.LatLng) => void
 }) {
-  console.log('aaaaaaa ', notes.map(n => ({ lat: n.latitude, lng: n.longitude })));
+  // console.log('aaaaaaa ', notes.map(n => ({ lat: n.latitude, lng: n.longitude })));
   const map = useMap();
   const markersRef = useRef<Record<string, L.Marker>>({});
 
@@ -269,6 +270,10 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({
     flyTo: (lat, lng, zoom = 15) => {
       console.log('[MapView] flyTo called with:', { lat, lng, zoom });
       mapRefInternal.current?.flyTo([lat, lng], zoom);
+    },
+    getCenter: () => {
+      console.log('[MapView] getCenter called');
+      return mapRefInternal.current?.getCenter();
     }
   }), []);
 

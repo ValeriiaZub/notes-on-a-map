@@ -53,89 +53,86 @@ export function NoteDetail({
     }
   }
 
-  return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div className="text-sm text-gray-600">
-          {formatDistanceToNow(new Date(note.created_at || Date.now()), { addSuffix: true })}
-        </div>
-        <div className="flex gap-2">
-          {onShare && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onShare(note)}
-            >
-              Share
-            </Button>
-          )}
-          {onClose && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-            >
-              Close
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isEditing ? (
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="min-h-[100px]"
-            placeholder="Write your note here..."
-          />
-        ) : (
-          <p className="whitespace-pre-wrap">{content}</p>
-        )}
-        <div className="mt-4 text-sm text-gray-600">
-          📍 {note.latitude.toFixed(6)}, {note.longitude.toFixed(6)}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-end gap-2">
-        {onSave && (
-          isEditing ? (
-            <>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setContent(note.content)
-                  setIsEditing(false)
-                }}
-                disabled={isSaving}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || content === note.content}
-              >
-                {isSaving ? 'Saving...' : 'Save'}
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="ghost"
-              onClick={() => setIsEditing(true)}
-            >
-              Edit
-            </Button>
-          )
-        )}
-        {onDelete && !isEditing && (
-          <Button
-            variant="ghost"
-            className="text-red-600 hover:text-red-700"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Deleting...' : 'Delete'}
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
-  )
-} 
+    // <Card className="w-full max-w-lg mx-auto">
+    //   <CardHeader className="flex flex-row items-center justify-between">
+    //     <div className="text-sm text-gray-600">
+    //       {formatDistanceToNow(new Date(note.created_at || Date.now()), { addSuffix: true })}
+    //     </div>
+    //     <div className="flex gap-2">
+    //       {onShare && (
+    //         <Button
+    //           variant="ghost"
+    //           size="sm"
+    //           onClick={() => onShare(note)}
+    //         >
+    //           Share
+    //         </Button>
+    //       )}
+    //       {onClose && (
+    //         <Button
+    //           variant="ghost"
+    //           size="sm"
+    //           onClick={onClose}
+    //         >
+    //           Close
+    //         </Button>
+    //       )}
+    //     </div>
+    //   </CardHeader>
+    //   <CardContent>
+    //     {isEditing ? (
+    //       <Textarea
+    //         value={content}
+    //         onChange={(e) => setContent(e.target.value)}
+    //         className="min-h-[100px]"
+    //         placeholder="Write your note here..."
+    //       />
+    //     ) : (
+    //       <p className="whitespace-pre-wrap">{content}</p>
+    //     )}
+    //     <div className="mt-4 text-sm text-gray-600">
+    //       📍 {note.latitude.toFixed(6)}, {note.longitude.toFixed(6)}
+    //     </div>
+    //   </CardContent>
+    //   <CardFooter className="flex justify-end gap-2">
+    //     {onSave && (
+    //       isEditing ? (
+    //         <>
+    //           <Button
+    //             variant="ghost"
+    //             onClick={() => {
+    //               setContent(note.content)
+    //               setIsEditing(false)
+    //             }}
+    //             disabled={isSaving}
+    //           >
+    //             Cancel
+    //           </Button>
+    //           <Button
+    //             onClick={handleSave}
+    //             disabled={isSaving || content === note.content}
+    //           >
+    //             {isSaving ? 'Saving...' : 'Save'}
+    //           </Button>
+    //         </>
+    //       ) : (
+    //         <Button
+    //           variant="ghost"
+    //           onClick={() => setIsEditing(true)}
+    //         >
+    //           Edit
+    //         </Button>
+    //       )
+    //     )}
+    //     {onDelete && !isEditing && (
+    //       <Button
+    //         variant="ghost"
+    //         className="text-red-600 hover:text-red-700"
+    //         onClick={handleDelete}
+    //         disabled={isDeleting}
+    //       >
+    //         {isDeleting ? 'Deleting...' : 'Delete'}
+    //       </Button>
+    //     )}
+    //   </CardFooter>
+    // </Card>

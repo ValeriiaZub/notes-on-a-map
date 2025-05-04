@@ -204,6 +204,36 @@ export function useNoteSync(isAuthenticated: boolean) { // Accept isAuthenticate
     },
   })
 
+  // Function to add a temporary note for immediate UI feedback
+  const addTemporaryNote = useCallback((latitude: number, longitude: number) => {
+    console.log('[useNoteSync] Adding temporary note at:', { latitude, longitude });
+    const tempId = `temp-${crypto.randomUUID()}`; // Use a prefix for clarity
+    const now = new Date().toISOString();
+    const tempNote: Note = {
+      id: tempId,
+      content: '', // Start with empty content
+      latitude,
+      longitude,
+      created_at: now,
+      updated_at: now,
+      sync_status: 'pending',
+      startInEditMode: true, // Set the flag
+    };
+
+    console.log('[useNoteSync] Created temporary note object:', tempNote);
+
+    // Optimistically update the local cache
+    queryClient.setQueryData<Note[]>(['notes'], (oldNotes = []) => {
+      console.log('[useNoteSync] Optimistically adding temporary note to cache');
+      return [...oldNotes, tempNote];
+    });
+
+    // Optionally, you could return the tempId or tempNote if needed
+    return tempNote;
+
+  }, [queryClient]);
+
+
   // // Sync function
   // const sync = useCallback(async () => {
   //   try {
@@ -236,6 +266,7 @@ export function useNoteSync(isAuthenticated: boolean) { // Accept isAuthenticate
     createNote: createNote.mutateAsync,
     updateNote: updateNote.mutateAsync,
     deleteNote: deleteNote.mutateAsync,
+    addTemporaryNote, // Expose the new function
     // sync,
   }
-} 
+}
