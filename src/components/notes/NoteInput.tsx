@@ -57,7 +57,7 @@ export function NoteInput({ onSave, initialValue = '', maxLength = 1000 }: NoteI
 
   const charactersLeft = maxLength - content.length
 
-  // return (
+  return <></>
   //   <Card className="w-full max-w-md mx-auto">
   //     <CardContent className="pt-6">
   //       <Textarea

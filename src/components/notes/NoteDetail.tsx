@@ -52,7 +52,7 @@ export function NoteDetail({
       setIsDeleting(false)
     }
   }
-
+}
     // <Card className="w-full max-w-lg mx-auto">
     //   <CardHeader className="flex flex-row items-center justify-between">
     //     <div className="text-sm text-gray-600">

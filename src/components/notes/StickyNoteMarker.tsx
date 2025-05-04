@@ -78,7 +78,7 @@ export function StickyNoteMarker({
   return (
     <AnimatePresence>
       <motion.div
-        {...bind()}
+        // {...bind()}
         initial="idle"
         animate={getAnimationState()}
         whileHover={isDragging ? undefined : 'hover'}
