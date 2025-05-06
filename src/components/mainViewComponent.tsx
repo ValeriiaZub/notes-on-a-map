@@ -13,6 +13,7 @@ import { NotePreview } from "./notes/NotePreview";
 import ListView from "./notes/ListView";
 import { createClient } from "@/lib/utils/supabase/client";
 import dynamic from "next/dynamic";
+import { AuthForm } from "@/components/auth/AuthForm";
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((mod) => mod.MapView),
@@ -74,7 +75,8 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const handleSignOut = async () => {
         try {
             await supabase.auth.signOut()
-        } catch (error) {
+            window.location.href = '/login';
+            } catch (error) {
             console.error('Failed to sign out:', error)
         }
     }
