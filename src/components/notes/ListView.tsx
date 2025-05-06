@@ -31,8 +31,8 @@ export function ListView({ notes, onNoteSelect, className }: ListViewProps) {
 
 
   return (
-    <div className={`p-4 space-y-6 ${className}`} >
-      <h2 className="text-2xl font-semibold mb-4">Notes List</h2>
+    <div className={`space-y-6 ${className}`} >
+      {/* <h2 className="text-2xl font-semibold mb-4">Notes List</h2> */}
       {Object.entries(groupedNotes).map(([group, notesInGroup]) => (
         notesInGroup.length > 0 && (
           <div key={group}>

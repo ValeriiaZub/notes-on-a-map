@@ -9,11 +9,10 @@ import { MapViewHandle } from "./map/MapView";
 import { useNoteSync } from "@/hooks/useNoteSync";
 import { LatLng } from "leaflet";
 import { NoteInput } from "./notes/NoteInput";
-import { NotePreview } from "./notes/NotePreview";
 import ListView from "./notes/ListView";
 import { createClient } from "@/lib/utils/supabase/client";
 import dynamic from "next/dynamic";
-import { AuthForm } from "@/components/auth/AuthForm";
+import { useRouter } from "next/navigation";
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((mod) => mod.MapView),
@@ -38,6 +37,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for timeout
     const { notes, createNote, updateNote, deleteNote, addTemporaryNote, isLoading } = useNoteSync(isAuthenticated) // Get addTemporaryNote
     const supabase = createClient()
+    const router = useRouter()
 
     const handleSaveNote = async (note: Note) => {
         if (!isAuthenticated) {
@@ -75,8 +75,8 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const handleSignOut = async () => {
         try {
             await supabase.auth.signOut()
-            window.location.href = '/login';
-            } catch (error) {
+            router.push('/login')
+        } catch (error) {
             console.error('Failed to sign out:', error)
         }
     }
@@ -111,12 +111,9 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                     <div className="flex flex-col gap-8 flex-grow"> {/* Changed to flex-col and added flex-grow */}
                         {/* Note Input and Preview Section */}
                         <div className="flex flex-col gap-4">
-                            <NoteInput onSave={handleSaveNote} />
-                            {selectedNote && viewMode === 'map' && ( // Only show preview in map mode for now, or adjust later
-                                <NotePreview
-                                    note={selectedNote}
-                                    onClose={() => setSelectedNote(null)}
-                                />
+                           
+                            {selectedNote && viewMode === 'map' && (
+                                 <NoteInput onSave={handleSaveNote} /> // Only show preview in map mode for now, or adjust later
                             )}
                         </div>
 

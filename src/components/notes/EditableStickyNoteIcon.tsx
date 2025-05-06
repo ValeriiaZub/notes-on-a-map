@@ -10,10 +10,10 @@ interface EditableStickyNoteIconProps {
   note: Note
   onNoteUpdate: (updatedNote: Partial<Note>) => void
   onNoteDelete: () => void // Keep for future
-  // Add other props like color later if needed
+  noteStyle?: React.CSSProperties // Optional prop for custom styles
 }
 
-export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete }: EditableStickyNoteIconProps) {
+export function EditableStickyNoteIcon({ note, onNoteUpdate, onNoteDelete}: EditableStickyNoteIconProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedContent, setEditedContent] = useState(note.content)
   const [error, setError] = useState<string | null>(null)
