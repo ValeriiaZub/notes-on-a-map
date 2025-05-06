@@ -8,7 +8,7 @@ const noteSchema = z.object({
   content: z.string().min(1).max(1000),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
-  accuracy: z.number().optional(),
+  accuracy: z.number().optional().nullable(),
   created_at: z.string().datetime().optional(),
   updated_at: z.string().datetime().optional(),
   sync_status: z.enum(['synced', 'pending', 'conflict']).default('synced'),
