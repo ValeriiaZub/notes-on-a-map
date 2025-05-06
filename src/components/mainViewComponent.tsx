@@ -35,36 +35,23 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const [isTransitioning, setIsTransitioning] = useState(false); // State for animation
     const mapRef = useRef<MapViewHandle | null>(null); // Use the imported MapViewHandle type for the ref
     const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for timeout
-    const { notes, createNote, updateNote, isLoading, addTemporaryNote } = useNoteSync(isAuthenticated) // Get addTemporaryNote
+    const { notes, createNote, updateNote, deleteNote, addTemporaryNote, isLoading } = useNoteSync(isAuthenticated) // Get addTemporaryNote
     const supabase = createClient()
 
     const handleSaveNote = async (note: Note) => {
-        console.log('[page] handleSaveNote called with note:', {
-            content: note.content,
-            lat: note.latitude,
-            lng: note.longitude
-        });
-
         if (!isAuthenticated) {
             console.error('[page] User must be authenticated to save notes')
             return
         }
 
         try {
-            console.log('[page] Calling createNote');
             await createNote(note)
-            console.log('[page] Note created successfully');
         } catch (error) {
             console.error('[page] Failed to save note:', error)
         }
     }
 
     const handleNotePositionChange = async (note: Note, newPosition: LatLng) => {
-        console.log('[page] handleNotePositionChange called with:', {
-            noteId: note.id,
-            newLat: newPosition.lat,
-            newLng: newPosition.lng
-        });
 
         if (!isAuthenticated) {
             console.error('[page] User must be authenticated to update notes')
@@ -72,7 +59,6 @@ const MainMapView = ({ isAuthenticated }: Props) => {
         }
 
         try {
-            console.log('[page] -------------- Calling updateNote with new position');
             await updateNote({
                 id: note.id,
                 user_id: note.user_id,
@@ -80,7 +66,6 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                 latitude: newPosition.lat,
                 longitude: newPosition.lng
             })
-            console.log('[page] Note position updated successfully');
         } catch (error) {
             console.error('[page] Failed to update note position:', error)
         }
@@ -95,13 +80,9 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     }
 
     const handleAddNoteClick = () => {
-        console.log('[page] Add Note button clicked');
         const center = mapRef.current?.getCenter();
         if (center) {
-            console.log('[page] Map center:', center);
-            // Call the function from useNoteSync
             addTemporaryNote(center.lat, center.lng);
-            // Optionally switch back to map view if in list view
             if (viewMode === 'list') {
                 setViewMode('map');
                 // Potentially add transition logic if desired
@@ -155,6 +136,8 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                     notes={notes}
                                     // onNoteSelect={setSelectedNote} // Removed - MapView no longer handles direct selection this way
                                     onNotePositionChange={handleNotePositionChange}
+                                    onNoteDelete={deleteNote}
+                                    onNoteUpdate={updateNote}
                                     className="h-full md:h-[600px] lg:h-full w-full" // Adjusted height and width
                                 />
                             </div>
@@ -167,13 +150,10 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                 <ListView 
                                     notes={notes}
                                     onNoteSelect={(note: Note) => { // Add Note type to parameter
-                                        console.log('[page] Note selected in list view:', note.id);
                                         setSelectedNote(note); // Keep track of selected note if needed for preview later
-                                        console.log('[page] Switching to map view');
                                         setViewMode('map'); // Switch back to map view
                                         // Use a short delay to allow the map view to render before flying
                                         setTimeout(() => {
-                                            console.log('[page] Flying to note location:', { lat: note.latitude, lng: note.longitude });
                                             mapRef.current?.flyTo(note.latitude, note.longitude, 15); // Fly to note location
                                         }, 50); // Small delay (adjust if needed)
                                     }}
@@ -189,7 +169,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                 variant="outline"
                                 size="icon"
                                 onClick={handleAddNoteClick}
-                                disabled={isLoading || !isAuthenticated} // Disable if loading or not authenticated
+                                disabled={!isAuthenticated} // Disable if loading or not authenticated
                                 title="Add new note at map center"
                             >
                                 <Plus className="h-4 w-4" />
