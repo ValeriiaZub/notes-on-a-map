@@ -84,25 +84,10 @@ function DirectMarkerRenderer({
     const markerElement = document.createElement('div');
     markerElement.style.width = '100px';
     markerElement.style.height = '100px';
+    markerElement.style.viewTransitionName = `note-${note.id}` 
 
-    // markerElement.style.backgroundColor = '#FFFACD';
-    // markerElement.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.3)';
-    // markerElement.style.padding = '8px';
-    // markerElement.style.borderRadius = '3px';
-    // markerElement.style.fontFamily = '"Permanent Marker", cursive';
-    // markerElement.style.fontSize = '12px';
-    // markerElement.style.lineHeight = '1.3';
-    // markerElement.style.textAlign = 'center';
-    // markerElement.style.cursor = 'pointer';
-    // markerElement.style.display = 'flex';
-    // markerElement.style.flexDirection = 'column';
-    // markerElement.style.justifyContent = 'space-between';
-    // markerElement.style.alignItems = 'center';
-    // markerElement.style.overflow = 'hidden';
     markerElement.style.position = 'relative';
-    // markerElement.style.wordBreak = 'break-word';
 
-    // Render the EditableStickyNoteIcon component into the marker element
     const root = createRoot(markerElement);
     root.render(
       <EditableStickyNoteIcon

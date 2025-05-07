@@ -1,10 +1,12 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { noteStyle } from "../notes/note"
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
+      style={{ ...noteStyle, height: '200px', width: '200px', filter: 'hue-rotate(300deg)' }}
       data-slot="card"
       className={cn(
         "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",

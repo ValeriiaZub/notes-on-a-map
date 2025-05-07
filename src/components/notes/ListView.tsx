@@ -32,26 +32,20 @@ export function ListView({ notes, onNoteSelect, className }: ListViewProps) {
 
   return (
     <div className={`space-y-6 ${className}`} >
-      {/* <h2 className="text-2xl font-semibold mb-4">Notes List</h2> */}
       {Object.entries(groupedNotes).map(([group, notesInGroup]) => (
         notesInGroup.length > 0 && (
           <div key={group}>
             <h3 className="text-lg font-medium mb-2 sticky top-0 bg-background py-1">{group}</h3>
-            <div className="space-y-3">
+            <div className="space-y-3 flex flex-row gap-8 flex-wrap">
               {notesInGroup.map((note) => (
                 <Card
                   key={note.id}
                   className="cursor-pointer hover:shadow-md transition-shadow bg-yellow-100 border-yellow-300" // Sticky note style
                   onClick={() => onNoteSelect(note)}
                 >
-                  <CardHeader className="p-3">
-                    <CardTitle className="text-sm font-medium">Note</CardTitle> {/* Simple title */}
-                  </CardHeader>
-                  <CardContent className="p-3 text-sm">
+                  <CardContent className="flex justify-center items-center w-full h-full p-3 text-sm" style={{ viewTransitionName: `note-${note.id}` }}>
                     <p className="line-clamp-3">{note.content}</p> {/* Truncate long content */}
-                    <p className="text-xs text-gray-500 mt-1">
-                      {note.created_at ? new Date(note.created_at).toLocaleString() : 'Date unknown'}
-                    </p>
+                    {/* {note.created_at ? new Date(note.created_at).toLocaleString() : 'Date unknown'} */}
                   </CardContent>
                 </Card>
               ))}

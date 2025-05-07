@@ -13,6 +13,7 @@ import ListView from "./notes/ListView";
 import { createClient } from "@/lib/utils/supabase/client";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import { getRandomNote } from "@/lib/utils/text";
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((mod) => mod.MapView),
@@ -81,17 +82,19 @@ const MainMapView = ({ isAuthenticated }: Props) => {
         }
     }
 
-    const handleAddNoteClick = () => {
+    const handleAddNoteClick = async () => {
         const center = mapRef.current?.getCenter();
         if (center) {
-            addTemporaryNote(center.lat, center.lng);
+            const note = await createNote({
+                content: getRandomNote(),
+                latitude: center.lat,
+                longitude: center.lng
+            });
             if (viewMode === 'list') {
                 setViewMode('map');
-                // Potentially add transition logic if desired
             }
         } else {
             console.warn('[page] Could not get map center');
-            // TODO: Add user feedback (e.g., toast notification) if center cannot be obtained
         }
     };
 
@@ -164,6 +167,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2"> {/* Added flex and gap */}
                             {/* Add Note Button */}
                             <Button
+                                type="button"
                                 variant="outline"
                                 size="icon"
                                 onClick={handleAddNoteClick}
