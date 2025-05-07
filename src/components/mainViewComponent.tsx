@@ -126,9 +126,8 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                 </div>
                             )}
                             {/* Map View */}
-                            <div
-                                className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${viewMode === 'map' && !isTransitioning ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                                    }`}
+                            <div style={{filter:'hue-rotate(300deg)'}} /* pinkish tone */
+                                className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${viewMode === 'map' && !isTransitioning ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
                             >
                                 <MapView
                                     ref={mapRef} // Assign ref

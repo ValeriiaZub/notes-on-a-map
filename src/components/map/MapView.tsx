@@ -82,8 +82,8 @@ function DirectMarkerRenderer({
   const createMarker = useCallback((note: Note) => {
     // Create a div element for the marker content
     const markerElement = document.createElement('div');
-    markerElement.style.width = '120px';
-    markerElement.style.height = '120px';
+    markerElement.style.width = '100px';
+    markerElement.style.height = '100px';
 
     // markerElement.style.backgroundColor = '#FFFACD';
     // markerElement.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.3)';
@@ -156,7 +156,6 @@ export const MapView = forwardRef<MapViewHandle, MapViewProps>(({
   notes = [],
   // Removed onNoteSelect from props destructuring
   onNoteDelete,
-  onNoteShare,
   onNoteUpdate, // Add onNoteUpdate
   onNotePositionChange,
   className = ''
