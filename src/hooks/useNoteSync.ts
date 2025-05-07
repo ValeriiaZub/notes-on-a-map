@@ -58,18 +58,7 @@ export function useNoteSync(isAuthenticated: boolean) { // Accept isAuthenticate
         // Store note locally
         return newNote
       } catch (createError) {
-        // Ensure lat/lng are explicitly included in the temporary offline note
-        const tempNote: Note = {
-          content: note.content,
-          latitude: note.latitude, // Explicitly include latitude
-          longitude: note.longitude, // Explicitly include longitude
-          accuracy: note.accuracy, // Include accuracy if available
-          id: crypto.randomUUID(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(), // Add updated_at for consistency
-          sync_status: 'pending' as const,
-        };
-        return tempNote
+        console.error(createError)
       }
     },
     onSuccess: (newNote) => {

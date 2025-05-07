@@ -9,10 +9,11 @@ import { MapViewHandle } from "./map/MapView";
 import { useNoteSync } from "@/hooks/useNoteSync";
 import { LatLng } from "leaflet";
 import { NoteInput } from "./notes/NoteInput";
-import { NotePreview } from "./notes/NotePreview";
 import ListView from "./notes/ListView";
 import { createClient } from "@/lib/utils/supabase/client";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { getRandomNote } from "@/lib/utils/text";
 
 const MapView = dynamic(
   () => import('@/components/map/MapView').then((mod) => mod.MapView),
@@ -37,6 +38,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for timeout
     const { notes, createNote, updateNote, deleteNote, addTemporaryNote, isLoading } = useNoteSync(isAuthenticated) // Get addTemporaryNote
     const supabase = createClient()
+    const router = useRouter()
 
     const handleSaveNote = async (note: Note) => {
         if (!isAuthenticated) {
@@ -74,22 +76,25 @@ const MainMapView = ({ isAuthenticated }: Props) => {
     const handleSignOut = async () => {
         try {
             await supabase.auth.signOut()
+            router.push('/login')
         } catch (error) {
             console.error('Failed to sign out:', error)
         }
     }
 
-    const handleAddNoteClick = () => {
+    const handleAddNoteClick = async () => {
         const center = mapRef.current?.getCenter();
         if (center) {
-            addTemporaryNote(center.lat, center.lng);
+            const note = await createNote({
+                content: getRandomNote(),
+                latitude: center.lat,
+                longitude: center.lng
+            });
             if (viewMode === 'list') {
                 setViewMode('map');
-                // Potentially add transition logic if desired
             }
         } else {
             console.warn('[page] Could not get map center');
-            // TODO: Add user feedback (e.g., toast notification) if center cannot be obtained
         }
     };
 
@@ -109,12 +114,9 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                     <div className="flex flex-col gap-8 flex-grow"> {/* Changed to flex-col and added flex-grow */}
                         {/* Note Input and Preview Section */}
                         <div className="flex flex-col gap-4">
-                            <NoteInput onSave={handleSaveNote} />
-                            {selectedNote && viewMode === 'map' && ( // Only show preview in map mode for now, or adjust later
-                                <NotePreview
-                                    note={selectedNote}
-                                    onClose={() => setSelectedNote(null)}
-                                />
+                           
+                            {selectedNote && viewMode === 'map' && (
+                                 <NoteInput onSave={handleSaveNote} /> // Only show preview in map mode for now, or adjust later
                             )}
                         </div>
 
@@ -127,9 +129,8 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                                 </div>
                             )}
                             {/* Map View */}
-                            <div
-                                className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${viewMode === 'map' && !isTransitioning ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                                    }`}
+                            <div style={{filter:'hue-rotate(300deg)'}} /* pinkish tone */
+                                className={`absolute inset-0 transition-opacity duration-300 ease-in-out ${viewMode === 'map' && !isTransitioning ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
                             >
                                 <MapView
                                     ref={mapRef} // Assign ref
@@ -166,6 +167,7 @@ const MainMapView = ({ isAuthenticated }: Props) => {
                         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2"> {/* Added flex and gap */}
                             {/* Add Note Button */}
                             <Button
+                                type="button"
                                 variant="outline"
                                 size="icon"
                                 onClick={handleAddNoteClick}
